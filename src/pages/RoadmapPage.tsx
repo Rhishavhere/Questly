@@ -60,7 +60,7 @@ const RoadmapPage: React.FC<RoadmapPageProps> = ({ initialRoadmap, onUpdate, onB
       
       Please modify the roadmap according to the user's request and return the updated JSON object with the same structure. Maintain the completion status of existing steps where possible. Return only the JSON object.`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -237,7 +237,7 @@ const RoadmapPage: React.FC<RoadmapPageProps> = ({ initialRoadmap, onUpdate, onB
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-sm font-medium text-gray-500">Step {index + 1}</span>
                   </div>
-                  <CardTitle className={`text-lg ${step.completed ? 'text-green-800' : 'text-gray-800'}`}>
+                  <CardTitle className={`text-lg font-poppins ${step.completed ? 'text-green-800' : 'text-gray-800'}`}>
                     {step.title}
                   </CardTitle>
                 </div>

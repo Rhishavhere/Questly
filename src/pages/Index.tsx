@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 // Progress, Textarea, CheckCircle2, Circle will be used in RoadmapPage
-import { Sparkles, Target, BookOpen, ArrowRight, List, Trash2 } from 'lucide-react';
+import { Sparkles, Target, BookOpen, ArrowRight, List, Trash2, MoveDown } from 'lucide-react';
 import RoadmapPage from './RoadmapPage'; // Import RoadmapPage
 
 interface RoadmapStep {
@@ -84,7 +84,7 @@ const Index = () => {
           {
             "id": "step-1",
             "title": "Step title here",
-            "description": "Detailed description of what to learn/do in this step",
+            "description": "Description of what to learn/do in this step",
             "resource": {
               "title": "Resource name",
               "url": "https://example.com (if available)",
@@ -195,16 +195,16 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-20 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Target className="w-8 h-8 text-blue-600" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            {/* <Target className="w-8 h-8 text-blue-600" /> */}
+            <h1 className="text-4xl font-montserrat font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Stepwise
             </h1>
           </div>
-          <p className="text-gray-600 text-lg">AI-powered roadmap generator for your learning journey</p>
+          <p className="text-gray-600 text-sm px-10 font-poppins">AI-powered roadmap generator for your learning journey</p>
         </div>
 
         {selectedRoadmap ? (
@@ -217,27 +217,27 @@ const Index = () => {
         ) : (
           <>
             {/* Topic Input */}
-            <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+            <Card className="mb-6 mx-2 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-blue-600" />
+                <CardTitle className="flex items-center gap-4 text-xl font-serif">
+                  <BookOpen className="w-8 h-8 text-blue-600" />
                   What would you like to learn?
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2">
                   <Input
-                    placeholder="e.g., Learn React development, Master digital marketing..."
+                    placeholder="e.g., Python, Master digital marketing..."
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && generateRoadmap()}
-                    className="flex-1 text-lg"
+                    className="flex-1 text-sm"
                     disabled={isGenerating}
                   />
                   <Button 
                     onClick={generateRoadmap} 
                     disabled={isGenerating || !geminiApiKey}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    className=" bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
                     {isGenerating ? (
                       <div className="flex items-center gap-2">
@@ -255,44 +255,51 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            {/* Previously Generated Roadmaps List */}
-            {roadmapsList.length > 0 && (
-              <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <List className="w-5 h-5 text-blue-600" />
-                    Your Previous Roadmaps
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3">
-                    {roadmapsList.map((r) => (
-                      <li key={r.id} className="p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors flex justify-between items-center">
-                        <div>
-                          <button 
-                            onClick={() => setSelectedRoadmap(r)} 
-                            className="text-blue-600 hover:underline font-medium text-left"
-                          >
-                            {r.topic}
-                          </button>
-                          <p className="text-xs text-gray-500">Created: {new Date(r.createdAt).toLocaleDateString()}</p>
-                        </div>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteRoadmapFromList(r.id)} title="Delete Roadmap">
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            )}
 
             {/* Empty State for no roadmaps if API key is present */}
-            {roadmapsList.length === 0 && geminiApiKey && (
-              <div className="text-center py-12">
-                <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">Ready to Start Learning?</h3>
-                <p className="text-gray-500">Enter any topic above and let AI create a personalized roadmap for you!</p>
+
+            <div className="text-center py-6">
+              <Target className="w-20 h-20 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">Ready to Start Learning?</h3>
+              <p className="text-gray-500 px-10 text-xs font-poppins">Enter any topic and let AI create a personalized roadmap for you!</p>
+            </div>
+
+
+            
+            {/* Previously Generated Roadmaps List */}
+            {roadmapsList.length > 0 && (
+              <div>
+                <div className='flex justify-center items-center mb-6'>
+                  <MoveDown className='text-gray-500'></MoveDown>
+                </div>
+                <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-md italic text-gray-700">
+                      <List className="w-5 h-5 text-blue-600" />
+                      Your Previous Roadmaps
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      {roadmapsList.map((r) => (
+                        <li key={r.id} className="p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors flex justify-between items-center">
+                          <div>
+                            <button 
+                              onClick={() => setSelectedRoadmap(r)} 
+                              className="text-blue-600 hover:underline font-medium text-left"
+                            >
+                              {r.topic}
+                            </button>
+                            <p className="text-xs text-gray-500">Created: {new Date(r.createdAt).toLocaleDateString()}</p>
+                          </div>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteRoadmapFromList(r.id)} title="Delete Roadmap">
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
               </div>
             )}
 
