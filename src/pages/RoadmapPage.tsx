@@ -5,7 +5,11 @@ import { Input } from '@/components/ui/input'; // May not be needed here
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Circle, Sparkles, BookOpen, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Circle, Sparkles, BookOpen, ArrowRight, Download } from 'lucide-react';
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
+
+pdfMake.vfs = pdfFonts.vfs;
 
 // Copied from Index.tsx
 interface RoadmapStep {
@@ -37,7 +41,107 @@ const RoadmapPage: React.FC<RoadmapPageProps> = ({ initialRoadmap, onUpdate, onB
   const [currentRoadmap, setCurrentRoadmap] = useState<Roadmap>(initialRoadmap);
   const [customization, setCustomization] = useState('');
   const [isCustomizing, setIsCustomizing] = useState(false);
-  const { toast } = useToast(); // Initialize toast here if used for customizeRoadmap
+  const { toast } = useToast(); 
+
+  // PDF Export Function
+  const exportToPdf = () => {
+    if (!currentRoadmap) return;
+
+    const documentDefinition = {
+      content: [
+        { text: currentRoadmap.topic, style: 'header' },
+        { text: `Generated on: ${new Date(currentRoadmap.createdAt).toLocaleDateString()}`, style: 'subheader' },
+        '\n',
+        { text: 'This document provides a detailed learning roadmap. Each step includes a description and a recommended resource to guide your learning journey. Bulletins and additional notes can be added here to further enrich the content.', style: 'intro' },
+        '\n\n',
+        ...currentRoadmap.steps.flatMap((step, index) => [
+          {
+            text: `${index + 1}. ${step.title} ${step.completed ? '(Completed)' : ''}`,
+            style: 'stepTitle',
+            margin: [0, 0, 0, 5], // bottom margin
+          },
+          { text: step.description, style: 'stepDescription', margin: [10, 0, 0, 10] }, // left and bottom margin
+          {
+            text: 'Resource:',
+            style: 'resourceHeader',
+            margin: [10, 0, 0, 2], // left and bottom margin
+          },
+          {
+            ul: [
+              `${step.resource.title}${step.resource.url ? ` (${step.resource.url})` : ''}`,
+              step.resource.description,
+            ],
+            style: 'resourceDetails',
+            margin: [20, 0, 0, 15], // left and bottom margin
+          },
+          '\n',
+        ]),
+        '\n\n',
+        { text: 'Happy Learning!', style: 'footer', alignment: 'center' }
+      ],
+      styles: {
+        header: {
+          fontSize: 22,
+          bold: true,
+          alignment: 'center',
+          margin: [0, 0, 0, 10] // bottom margin
+        },
+        subheader: {
+          fontSize: 10,
+          italics: true,
+          alignment: 'center',
+          margin: [0, 0, 0, 20] // bottom margin
+        },
+        intro: {
+          fontSize: 10,
+          italics: true,
+          margin: [0,0,0,10]
+        },
+        stepTitle: {
+          fontSize: 16,
+          bold: true,
+        },
+        stepDescription: {
+          fontSize: 12,
+          margin: [0, 5, 0, 5]
+        },
+        resourceHeader: {
+          fontSize: 12,
+          bold: true,
+          italics: true,
+        },
+        resourceDetails: {
+          fontSize: 11,
+          margin: [0, 2, 0, 10]
+        },
+        footer: {
+            fontSize: 12,
+            bold: true,
+            italics: true,
+            margin: [0, 20, 0, 0] // top margin
+        }
+      },
+      defaultStyle: {
+        font: 'Roboto' // Ensure Roboto is available or use a standard font
+      }
+    };
+
+    try {
+      // @ts-ignore TODO: Check pdfmake types for proper document definition typing
+      pdfMake.createPdf(documentDefinition).download(`${currentRoadmap.topic.replace(/\s+/g, '_').toLowerCase()}_roadmap.pdf`);
+      toast({
+        title: "PDF Exported",
+        description: "Your roadmap has been exported as a PDF.",
+      });
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      toast({
+        title: "PDF Export Failed",
+        description: "Could not generate the PDF. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const customizeRoadmap = async () => {
     if (!customization.trim() || !currentRoadmap) { // Changed roadmap to currentRoadmap
@@ -187,15 +291,17 @@ const RoadmapPage: React.FC<RoadmapPageProps> = ({ initialRoadmap, onUpdate, onB
       {/* Progress Overview */}
       <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="text-xl">{currentRoadmap.topic}</CardTitle>
-            <Button variant="outline" onClick={handleBack} size="sm">
-              Back to Topics / Start New
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleBack} size="sm">
+                Back to Topics / Start New
+              </Button>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+        <CardContent className='flex flex-col'>
+          <div className="space-y-4 mb-2">
             <div>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-gray-700">Progress</span>
@@ -207,6 +313,10 @@ const RoadmapPage: React.FC<RoadmapPageProps> = ({ initialRoadmap, onUpdate, onB
               {currentRoadmap.steps.filter(s => s.completed).length} of {currentRoadmap.steps.length} steps completed
             </p>
           </div>
+          <Button variant="outline" onClick={exportToPdf} size="sm" title="Export to PDF" className='bg-gradient-to-r from-blue-50 to-purple-50'>
+            <Download className="w-4 h-4 mr-2" />
+            Export PDF
+          </Button>
         </CardContent>
       </Card>
 
