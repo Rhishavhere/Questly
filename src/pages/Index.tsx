@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 // Progress, Textarea, CheckCircle2, Circle will be used in RoadmapPage
 import { Sparkles, Target, BookOpen, ArrowRight, List, Trash2, MoveDown } from 'lucide-react';
 import RoadmapPage from './RoadmapPage'; // Import RoadmapPage
+import AppOverview from '@/components/AppOverview'; // Import AppOverview
 
 interface RoadmapStep {
   id: string;
@@ -200,8 +201,8 @@ const Index = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
             {/* <Target className="w-8 h-8 text-blue-600" /> */}
-            <h1 className="text-4xl font-montserrat font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Stepwise
+            <h1 className="text-4xl font-serif font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Questly
             </h1>
           </div>
           <p className="text-gray-600 text-sm px-10 font-poppins">AI-powered roadmap generator for your learning journey</p>
@@ -216,7 +217,7 @@ const Index = () => {
           />
         ) : (
           <>
-            {/* Topic Input */}
+            {/* Topic Input & App Overview */}
             <Card className="mb-6 mx-2 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-4 text-xl font-serif">
@@ -255,23 +256,24 @@ const Index = () => {
               </CardContent>
             </Card>
 
+            
 
             {/* Empty State for no roadmaps if API key is present */}
 
-            <div className="text-center py-6">
+            {/* <div className="text-center py-6">
               <Target className="w-20 h-20 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-700 mb-2">Ready to Start Learning?</h3>
               <p className="text-gray-500 px-10 text-xs font-poppins">Enter any topic and let AI create a personalized roadmap for you!</p>
-            </div>
+            </div> */}
 
 
             
             {/* Previously Generated Roadmaps List */}
             {roadmapsList.length > 0 && (
               <div>
-                <div className='flex justify-center items-center mb-6'>
+                {/* <div className='flex justify-center items-center mb-6'>
                   <MoveDown className='text-gray-500'></MoveDown>
-                </div>
+                </div> */}
                 <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-md italic text-gray-700">
@@ -311,6 +313,10 @@ const Index = () => {
                 <p className="text-gray-500">Please configure your VITE_GEMINI_API_KEY in the .env file to use this application.</p>
               </div>
             )}
+
+            {/* App Overview Section */}
+            <AppOverview />
+
           </>
         )}
       </div>

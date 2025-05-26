@@ -295,7 +295,7 @@ const RoadmapPage: React.FC<RoadmapPageProps> = ({ initialRoadmap, onUpdate, onB
             <CardTitle className="text-xl">{currentRoadmap.topic}</CardTitle>
             <div className="flex gap-2">
               <Button variant="outline" onClick={handleBack} size="sm">
-                Back to Topics / Start New
+                Back to Topics
               </Button>
             </div>
           </div>
@@ -307,7 +307,7 @@ const RoadmapPage: React.FC<RoadmapPageProps> = ({ initialRoadmap, onUpdate, onB
                 <span className="text-sm font-medium text-gray-700">Progress</span>
                 <span className="text-sm font-medium text-gray-700">{calculateProgress()}%</span>
               </div>
-              <Progress value={calculateProgress()} className="h-3" />
+              <Progress value={calculateProgress()} className="h-3 " />
             </div>
             <p className="text-sm text-gray-600">
               {currentRoadmap.steps.filter(s => s.completed).length} of {currentRoadmap.steps.length} steps completed
