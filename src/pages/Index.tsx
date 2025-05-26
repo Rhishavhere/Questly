@@ -4,9 +4,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Circle, Sparkles, Target, BookOpen, ArrowRight } from 'lucide-react';
+// Progress, Textarea, CheckCircle2, Circle will be used in RoadmapPage
+import { Sparkles, Target, BookOpen, ArrowRight, List, Trash2 } from 'lucide-react';
+import RoadmapPage from './RoadmapPage'; // Import RoadmapPage
 
 interface RoadmapStep {
   id: string;
@@ -20,7 +20,8 @@ interface RoadmapStep {
   completed: boolean;
 }
 
-interface Roadmap {
+export interface Roadmap { // Exporting for RoadmapPage
+  id: string; 
   topic: string;
   steps: RoadmapStep[];
   createdAt: string;
@@ -28,32 +29,29 @@ interface Roadmap {
 
 const Index = () => {
   const [topic, setTopic] = useState('');
-  const [customization, setCustomization] = useState('');
-  const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
+  const [selectedRoadmap, setSelectedRoadmap] = useState<Roadmap | null>(null);
+  const [roadmapsList, setRoadmapsList] = useState<Roadmap[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isCustomizing, setIsCustomizing] = useState(false);
+  // isCustomizing will be in RoadmapPage
   const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
   const { toast } = useToast();
 
-  // Load roadmap from localStorage on component mount
+  // Load roadmapsList from localStorage on component mount
   useEffect(() => {
-    const savedRoadmap = localStorage.getItem('stepwise-roadmap');
-    
-    if (savedRoadmap) {
+    const savedRoadmapsList = localStorage.getItem('stepwise-roadmaps-list');
+    if (savedRoadmapsList) {
       try {
-        setRoadmap(JSON.parse(savedRoadmap));
+        setRoadmapsList(JSON.parse(savedRoadmapsList));
       } catch (error) {
-        console.error('Error parsing saved roadmap:', error);
+        console.error('Error parsing saved roadmaps list:', error);
       }
     }
   }, []);
 
-  // Save roadmap to localStorage whenever it changes
+  // Save roadmapsList to localStorage whenever it changes
   useEffect(() => {
-    if (roadmap) {
-      localStorage.setItem('stepwise-roadmap', JSON.stringify(roadmap));
-    }
-  }, [roadmap]);
+    localStorage.setItem('stepwise-roadmaps-list', JSON.stringify(roadmapsList));
+  }, [roadmapsList]);
 
 
 
@@ -135,15 +133,18 @@ const Index = () => {
       }));
 
       const newRoadmap: Roadmap = {
+        id: topic.toLowerCase().replace(/\s+/g, '-') + '-' + new Date().toISOString(), // Generate unique ID
         topic: roadmapData.topic,
         steps: stepsWithIds,
         createdAt: new Date().toISOString()
       };
 
-      setRoadmap(newRoadmap);
+      setRoadmapsList(prevList => [newRoadmap, ...prevList]);
+      setSelectedRoadmap(newRoadmap);
+      setTopic(''); // Clear topic input after generation
       toast({
         title: "Roadmap Generated!",
-        description: `Created a ${stepsWithIds.length}-step roadmap for ${topic}`,
+        description: `Created a ${stepsWithIds.length}-step roadmap for ${roadmapData.topic}`,
       });
       
     } catch (error) {
@@ -158,115 +159,38 @@ const Index = () => {
     }
   };
 
-  const customizeRoadmap = async () => {
-    if (!customization.trim() || !roadmap) {
-      toast({
-        title: "Please enter customization request",
-        description: "Tell us how you'd like to modify the roadmap!",
-        variant: "destructive"
-      });
-      return;
-    }
+  // customizeRoadmap, toggleStepCompletion, calculateProgress will be in RoadmapPage.tsx
 
-    setIsCustomizing(true);
-    
-    try {
-      const currentRoadmapJson = JSON.stringify(roadmap, null, 2);
-      const prompt = `Here is the current roadmap:
-      ${currentRoadmapJson}
-      
-      User request: "${customization}"
-      
-      Please modify the roadmap according to the user's request and return the updated JSON object with the same structure. Maintain the completion status of existing steps where possible. Return only the JSON object.`;
-
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }]
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const generatedText = data.candidates[0].content.parts[0].text;
-      
-      // Extract JSON from the response
-      const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No valid JSON found in response');
-      }
-      
-      const updatedRoadmap = JSON.parse(jsonMatch[0]);
-      
-      // Preserve completion status from existing steps
-      const stepsWithPreservedStatus = updatedRoadmap.steps.map((step: any, index: number) => {
-        const existingStep = roadmap.steps.find(s => s.id === step.id);
-        return {
-          ...step,
-          id: step.id || `step-${index + 1}`,
-          completed: existingStep ? existingStep.completed : false
-        };
-      });
-
-      setRoadmap({
-        ...updatedRoadmap,
-        steps: stepsWithPreservedStatus,
-        createdAt: roadmap.createdAt
-      });
-      
-      setCustomization('');
-      toast({
-        title: "Roadmap Updated!",
-        description: "Your roadmap has been customized successfully.",
-      });
-      
-    } catch (error) {
-      console.error('Error customizing roadmap:', error);
-      toast({
-        title: "Customization Failed",
-        description: "Please try again with a different request.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsCustomizing(false);
-    }
-  };
-
-  const toggleStepCompletion = (stepId: string) => {
-    if (!roadmap) return;
-    
-    const updatedSteps = roadmap.steps.map(step => 
-      step.id === stepId ? { ...step, completed: !step.completed } : step
+  const handleUpdateRoadmapInList = (updatedRoadmap: Roadmap) => {
+    setRoadmapsList(prevList => 
+      prevList.map(r => r.id === updatedRoadmap.id ? updatedRoadmap : r)
     );
-    
-    setRoadmap({ ...roadmap, steps: updatedSteps });
+    setSelectedRoadmap(updatedRoadmap); // Keep the updated roadmap selected
   };
 
-  const resetRoadmap = () => {
-    setRoadmap(null);
-    setTopic('');
-    setCustomization('');
-    localStorage.removeItem('stepwise-roadmap');
+  const handleDeleteRoadmapFromList = (roadmapId: string) => {
+    setRoadmapsList(prevList => prevList.filter(r => r.id !== roadmapId));
+    if (selectedRoadmap && selectedRoadmap.id === roadmapId) {
+      setSelectedRoadmap(null); // Deselect if the deleted roadmap was selected
+    }
     toast({
-      title: "Roadmap Reset",
-      description: "Start fresh with a new learning journey!",
+      title: "Roadmap Deleted",
+      description: "The roadmap has been removed from your list.",
     });
   };
 
-  const calculateProgress = () => {
-    if (!roadmap || roadmap.steps.length === 0) return 0;
-    const completedSteps = roadmap.steps.filter(step => step.completed).length;
-    return Math.round((completedSteps / roadmap.steps.length) * 100);
+  const resetToLandingPage = () => {
+    setSelectedRoadmap(null);
+    // setTopic(''); // Topic is already cleared after generation or can be kept for re-gen
+    toast({
+      title: "Returned to Landing Page",
+      description: "Choose a roadmap or generate a new one!",
+    });
+  };
+
+  // This function is to clear the main topic input if needed, distinct from resetting a roadmap view
+  const clearTopicInput = () => {
+    setTopic(''); 
   };
 
   return (
@@ -283,193 +207,104 @@ const Index = () => {
           <p className="text-gray-600 text-lg">AI-powered roadmap generator for your learning journey</p>
         </div>
 
-
-
-        {/* Topic Input */}
-        <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-blue-600" />
-              What would you like to learn?
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2">
-              <Input
-                placeholder="e.g., Learn React development, Master digital marketing, Study data science..."
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && generateRoadmap()}
-                className="flex-1 text-lg"
-                disabled={isGenerating}
-              />
-              <Button 
-                onClick={generateRoadmap} 
-                disabled={isGenerating || !geminiApiKey}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              >
-                {isGenerating ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Generating...
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Generate
-                  </div>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Customization */}
-        {roadmap && (
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-600" />
-                Customize Your Roadmap
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Textarea
-                  placeholder="e.g., Add a beginner section, Remove advanced topics, Focus more on practical projects..."
-                  value={customization}
-                  onChange={(e) => setCustomization(e.target.value)}
-                  className="min-h-[100px]"
-                  disabled={isCustomizing}
-                />
-                <Button 
-                  onClick={customizeRoadmap} 
-                  disabled={isCustomizing || !customization.trim()}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                >
-                  {isCustomizing ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Updating...
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      Update Roadmap
-                    </div>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Progress Overview */}
-        {roadmap && (
-          <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">{roadmap.topic}</CardTitle>
-                <Button variant="outline" onClick={resetRoadmap} size="sm">
-                  Start New
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Progress</span>
-                    <span className="text-sm font-medium text-gray-700">{calculateProgress()}%</span>
-                  </div>
-                  <Progress value={calculateProgress()} className="h-3" />
-                </div>
-                <p className="text-sm text-gray-600">
-                  {roadmap.steps.filter(s => s.completed).length} of {roadmap.steps.length} steps completed
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Roadmap Steps */}
-        {roadmap && (
-          <div className="space-y-4 mb-6">
-            {roadmap.steps.map((step, index) => (
-              <Card 
-                key={step.id} 
-                className={`shadow-lg border-0 transition-all duration-300 ${
-                  step.completed 
-                    ? 'bg-green-50 border-l-4 border-l-green-500' 
-                    : 'bg-white/80 backdrop-blur-sm hover:shadow-xl'
-                }`}
-              >
-                <CardHeader>
-                  <div className="flex items-start gap-3">
-                    <button
-                      onClick={() => toggleStepCompletion(step.id)}
-                      className="mt-1 transition-colors"
-                    >
-                      {step.completed ? (
-                        <CheckCircle2 className="w-6 h-6 text-green-600" />
-                      ) : (
-                        <Circle className="w-6 h-6 text-gray-400 hover:text-blue-600" />
-                      )}
-                    </button>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm font-medium text-gray-500">Step {index + 1}</span>
+        {selectedRoadmap ? (
+          <RoadmapPage 
+            initialRoadmap={selectedRoadmap} 
+            onUpdate={handleUpdateRoadmapInList} 
+            onBack={resetToLandingPage} 
+            geminiApiKey={geminiApiKey} // Pass API key for customization within RoadmapPage
+          />
+        ) : (
+          <>
+            {/* Topic Input */}
+            <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-blue-600" />
+                  What would you like to learn?
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="e.g., Learn React development, Master digital marketing..."
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && generateRoadmap()}
+                    className="flex-1 text-lg"
+                    disabled={isGenerating}
+                  />
+                  <Button 
+                    onClick={generateRoadmap} 
+                    disabled={isGenerating || !geminiApiKey}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  >
+                    {isGenerating ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Generating...
                       </div>
-                      <CardTitle className={`text-lg ${step.completed ? 'text-green-800' : 'text-gray-800'}`}>
-                        {step.title}
-                      </CardTitle>
-                    </div>
-                  </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4" />
+                        Generate
+                      </div>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Previously Generated Roadmaps List */}
+            {roadmapsList.length > 0 && (
+              <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <List className="w-5 h-5 text-blue-600" />
+                    Your Previous Roadmaps
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className={`mb-4 ${step.completed ? 'text-green-700' : 'text-gray-600'}`}>
-                    {step.description}
-                  </p>
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex items-center gap-2 mb-2">
-                      <BookOpen className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-800">Recommended Resource</span>
-                    </div>
-                    <p className="text-sm font-medium text-blue-700 mb-1">{step.resource.title}</p>
-                    <p className="text-sm text-blue-600 mb-2">{step.resource.description}</p>
-                    {step.resource.url && (
-                      <a 
-                        href={step.resource.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
-                      >
-                        Visit Resource <ArrowRight className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
+                  <ul className="space-y-3">
+                    {roadmapsList.map((r) => (
+                      <li key={r.id} className="p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors flex justify-between items-center">
+                        <div>
+                          <button 
+                            onClick={() => setSelectedRoadmap(r)} 
+                            className="text-blue-600 hover:underline font-medium text-left"
+                          >
+                            {r.topic}
+                          </button>
+                          <p className="text-xs text-gray-500">Created: {new Date(r.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteRoadmapFromList(r.id)} title="Delete Roadmap">
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
+            )}
 
-        
+            {/* Empty State for no roadmaps if API key is present */}
+            {roadmapsList.length === 0 && geminiApiKey && (
+              <div className="text-center py-12">
+                <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">Ready to Start Learning?</h3>
+                <p className="text-gray-500">Enter any topic above and let AI create a personalized roadmap for you!</p>
+              </div>
+            )}
 
-        {/* Empty State */}
-        {!roadmap && geminiApiKey && (
-          <div className="text-center py-12">
-            <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">Ready to Start Learning?</h3>
-            <p className="text-gray-500">Enter any topic above and let AI create a personalized roadmap for you!</p>
-          </div>
-        )}
-        {!geminiApiKey && (
-          <div className="text-center py-12">
-            <Target className="w-16 h-16 text-red-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-red-700 mb-2">Gemini API Key Missing</h3>
-            <p className="text-gray-500">Please configure your VITE_GEMINI_API_KEY in the .env file to use this application.</p>
-          </div>
+            {/* API Key Missing Message */}
+            {!geminiApiKey && (
+              <div className="text-center py-12">
+                <Target className="w-16 h-16 text-red-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-red-700 mb-2">Gemini API Key Missing</h3>
+                <p className="text-gray-500">Please configure your VITE_GEMINI_API_KEY in the .env file to use this application.</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
