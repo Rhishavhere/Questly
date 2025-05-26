@@ -32,13 +32,12 @@ const Index = () => {
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCustomizing, setIsCustomizing] = useState(false);
-  const [apiKey, setApiKey] = useState('');
+  const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
   const { toast } = useToast();
 
-  // Load roadmap and API key from localStorage on component mount
+  // Load roadmap from localStorage on component mount
   useEffect(() => {
     const savedRoadmap = localStorage.getItem('stepwise-roadmap');
-    const savedApiKey = localStorage.getItem('stepwise-api-key');
     
     if (savedRoadmap) {
       try {
@@ -46,10 +45,6 @@ const Index = () => {
       } catch (error) {
         console.error('Error parsing saved roadmap:', error);
       }
-    }
-    
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
     }
   }, []);
 
@@ -60,12 +55,7 @@ const Index = () => {
     }
   }, [roadmap]);
 
-  // Save API key to localStorage
-  useEffect(() => {
-    if (apiKey) {
-      localStorage.setItem('stepwise-api-key', apiKey);
-    }
-  }, [apiKey]);
+
 
   const generateRoadmap = async () => {
     if (!topic.trim()) {
@@ -77,10 +67,10 @@ const Index = () => {
       return;
     }
 
-    if (!apiKey.trim()) {
+    if (!geminiApiKey) {
       toast({
-        title: "API Key Required",
-        description: "Please enter your Gemini API key to generate roadmaps.",
+        title: "API Key Not Found",
+        description: "Please ensure your VITE_GEMINI_API_KEY is set in the .env file.",
         variant: "destructive"
       });
       return;
@@ -108,7 +98,7 @@ const Index = () => {
       
       Create 8-12 comprehensive steps that take someone from beginner to intermediate level. Each step should have a specific, actionable title and detailed description. For resources, recommend real websites, tutorials, books, or tools when possible. Make sure the JSON is valid and properly formatted.`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -160,7 +150,7 @@ const Index = () => {
       console.error('Error generating roadmap:', error);
       toast({
         title: "Generation Failed",
-        description: "Please check your API key and try again.",
+        description: "An error occurred. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -189,7 +179,7 @@ const Index = () => {
       
       Please modify the roadmap according to the user's request and return the updated JSON object with the same structure. Maintain the completion status of existing steps where possible. Return only the JSON object.`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -293,37 +283,7 @@ const Index = () => {
           <p className="text-gray-600 text-lg">AI-powered roadmap generator for your learning journey</p>
         </div>
 
-        {/* API Key Input */}
-        {!apiKey && (
-          <Card className="mb-6 border-amber-200 bg-amber-50">
-            <CardHeader>
-              <CardTitle className="text-amber-800 flex items-center gap-2">
-                <Sparkles className="w-5 h-5" />
-                Gemini API Key Required
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-amber-700 mb-4">
-                Please enter your Gemini API key to generate AI-powered roadmaps.
-              </p>
-              <div className="flex gap-2">
-                <Input
-                  type="password"
-                  placeholder="Enter your Gemini API key"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  className="flex-1"
-                />
-                <Button 
-                  onClick={() => toast({ title: "API Key Saved", description: "You can now generate roadmaps!" })}
-                  disabled={!apiKey.trim()}
-                >
-                  Save
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+
 
         {/* Topic Input */}
         <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
@@ -345,7 +305,7 @@ const Index = () => {
               />
               <Button 
                 onClick={generateRoadmap} 
-                disabled={isGenerating || !apiKey}
+                disabled={isGenerating || !geminiApiKey}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               >
                 {isGenerating ? (
@@ -363,6 +323,46 @@ const Index = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Customization */}
+        {roadmap && (
+          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+                Customize Your Roadmap
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Textarea
+                  placeholder="e.g., Add a beginner section, Remove advanced topics, Focus more on practical projects..."
+                  value={customization}
+                  onChange={(e) => setCustomization(e.target.value)}
+                  className="min-h-[100px]"
+                  disabled={isCustomizing}
+                />
+                <Button 
+                  onClick={customizeRoadmap} 
+                  disabled={isCustomizing || !customization.trim()}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                >
+                  {isCustomizing ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Updating...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      Update Roadmap
+                    </div>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Progress Overview */}
         {roadmap && (
@@ -454,52 +454,21 @@ const Index = () => {
           </div>
         )}
 
-        {/* Customization */}
-        {roadmap && (
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-600" />
-                Customize Your Roadmap
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Textarea
-                  placeholder="e.g., Add a beginner section, Remove advanced topics, Focus more on practical projects..."
-                  value={customization}
-                  onChange={(e) => setCustomization(e.target.value)}
-                  className="min-h-[100px]"
-                  disabled={isCustomizing}
-                />
-                <Button 
-                  onClick={customizeRoadmap} 
-                  disabled={isCustomizing || !customization.trim()}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                >
-                  {isCustomizing ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Updating...
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      Update Roadmap
-                    </div>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        
 
         {/* Empty State */}
-        {!roadmap && apiKey && (
+        {!roadmap && geminiApiKey && (
           <div className="text-center py-12">
             <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-700 mb-2">Ready to Start Learning?</h3>
             <p className="text-gray-500">Enter any topic above and let AI create a personalized roadmap for you!</p>
+          </div>
+        )}
+        {!geminiApiKey && (
+          <div className="text-center py-12">
+            <Target className="w-16 h-16 text-red-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-red-700 mb-2">Gemini API Key Missing</h3>
+            <p className="text-gray-500">Please configure your VITE_GEMINI_API_KEY in the .env file to use this application.</p>
           </div>
         )}
       </div>
