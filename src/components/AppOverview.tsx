@@ -15,7 +15,7 @@ const AppOverview = () => {
         </CardHeader>
         <CardContent className="text-gray-700 space-y-3 font-poppins text-sm">
           <p>
-            Questly is your guide to mastering new skills. Simply enter a topic you're curious about, and we'll generate a comprehensive, step-by-step learning roadmap for you.
+            Questly is your guide to mastering new skills. Simply enter a topic you&apos;re curious about, and we&apos;ll generate a comprehensive, step-by-step learning roadmap for you.
           </p>
           <p>
             Each roadmap is designed to take you from beginner to an intermediate level, complete with curated resources and actionable tasks. Track your progress, customize your learning path, and achieve your goals faster than ever!
@@ -65,7 +65,7 @@ const AppOverview = () => {
             <li><strong>Consistency is Key:</strong> Try to dedicate regular time to your learning. Even short, focused sessions are effective.</li>
             <li><strong>Engage with Resources:</strong> Don't just read; actively engage with the suggested materials. Take notes, try exercises, and explore further.</li>
             <li><strong>Track Your Progress:</strong> Marking steps as complete provides a sense of accomplishment and helps you stay motivated.</li>
-            <li><strong>Don't Be Afraid to Revisit:</strong> Learning is iterative. Feel free to go back to previous steps if you need a refresher.</li>
+            <li><strong>Don&apos;t Be Afraid to Revisit:</strong> Learning is iterative. Feel free to go back to previous steps if you need a refresher.</li>
           </ul>
         </CardContent>
       </Card>

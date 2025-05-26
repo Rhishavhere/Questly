@@ -218,7 +218,7 @@ const Index = () => {
         ) : (
           <>
             {/* Topic Input & App Overview */}
-            <Card className="mb-6 mx-2 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+            <Card className="mb-6 mt-12 mx-2 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-4 text-xl font-serif">
                   <BookOpen className="w-8 h-8 text-blue-600" />
